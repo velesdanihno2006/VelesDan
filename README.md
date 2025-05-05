@@ -19,11 +19,11 @@
 * Исполнение — строка проверяется на соответствие, проходя через автомат. Мы отслеживаем все активные состояния и не используем бэктрекинг, поэтому движок работает в линейное время.
 Движок поддерживает базовые конструкции (., |, *, +, ()), написан в менее чем 200 строках Scala и демонстрирует, как можно построить работающий regex-движок без "магии".
 
-https://rcoh.svbtle.com/no-magic-regular-expressions
-https://rcoh.svbtle.com/regular-expressions-part-2
-https://rcoh.svbtle.com/no-magic-regular-expressions-part-3
-https://scala-lang.org/api/3.3.2/
-https://dotty.epfl.ch/api/scala/util/matching/Regex.html
+1. https://rcoh.svbtle.com/no-magic-regular-expressions
+2. https://rcoh.svbtle.com/regular-expressions-part-2
+3. https://rcoh.svbtle.com/no-magic-regular-expressions-part-3
+4. https://scala-lang.org/api/3.3.2/
+5. https://dotty.epfl.ch/api/scala/util/matching/Regex.html
 
 ## Ответственный по проектной (учебной) практике
 
