@@ -41,19 +41,7 @@ function getAnswerKeyboard() {
         reply_markup: {
             keyboard: [
                 [{text: 'а'}, {text: 'б'}, {text: 'в'}],
-                [{text: 'Пропустить вопрос'}, {text: '🔙 Главное меню'}]
-            ],
-            resize_keyboard: true
-        }
-    };
-}
-
-function getQuizMenuKeyboard() {
-    return {
-        reply_markup: {
-            keyboard: [
-                [{text: '➡️ Следующий вопрос'}, {text: '🔄 Начать заново'}],
-                [{text: '🔙 Главное меню'}]
+                [{text: 'Пропустить вопрос'}, {text: '◀️ Главное меню'}]
             ],
             resize_keyboard: true
         }
@@ -65,7 +53,7 @@ function getFinalMenuKeyboard() {
         reply_markup: {
             keyboard: [
                 [{text: '🔁 Повторить ошибки'}, {text: '🔄 Начать заново'}],
-                [{text: '🔙 Главное меню'}]
+                [{text: '◀️ Главное меню'}]
             ],
             resize_keyboard: true
         }
@@ -77,7 +65,7 @@ function getStatsKeyboard() {
         reply_markup: {
             keyboard: [
                 [{text: '🚀 Начать викторину'}, {text: '🆘 Помощь'}],
-                [{text: '🗑️ Сбросить статистику'}, {text: '🔙 Главное меню'}]
+                [{text: '🗑️ Сбросить статистику'}, {text: '◀️ Главное меню'}]
             ],
             resize_keyboard: true
         }
@@ -172,7 +160,7 @@ bot.on('message', (msg) => {
         case '🗑️ Сбросить статистику':
             resetStats(chatId, userId);
             break;
-        case '🔙 Главное меню':
+        case '◀️ Главное меню':
             const welcomeMessage = `
 🌟 *Добро пожаловать в BMW Knowledge Quiz!* 🌟
 
@@ -341,21 +329,23 @@ function skipQuestion(chatId, userId) {
         return;
     }
 
+    const sendNextQuestion = () => {
+        if (user.repeatMode) {
+            askNextIncorrectQuestion(chatId, userId);
+        } else {
+            const unansweredQuestions = questions.filter(q => user.answers[q.id] === undefined);
+            if (unansweredQuestions.length === 0) {
+                showFinalResults(chatId, userId);
+            } else {
+                askQuestion(chatId, userId);
+            }
+        }
+    };
+
     if (user.repeatMode) {
         user.repeatSkipped++;
         user.repeatingIncorrect = user.repeatingIncorrect.filter(id => id !== question.id);
         user.repeatingIncorrect.push(question.id);
-
-        const correctOption = question.options.find(opt => opt.correct);
-        bot.sendMessage(chatId,
-            `⏩ Вопрос пропущен!\n` +
-            `✅ Правильный ответ: ${correctOption.text}\n\n` +
-            question.explanation,
-            {parse_mode: 'Markdown'}
-        );
-
-        saveUsers();
-        setTimeout(() => askNextIncorrectQuestion(chatId, userId), 1000);
     } else {
         user.skipped++;
         user.answers[question.id] = null;
@@ -364,18 +354,17 @@ function skipQuestion(chatId, userId) {
         if (!user.incorrectQuestions.includes(question.id)) {
             user.incorrectQuestions.push(question.id);
         }
-
-        const correctOption = question.options.find(opt => opt.correct);
-        bot.sendMessage(chatId,
-            `⏩ Вопрос пропущен!\n` +
-            `✅ Правильный ответ: ${correctOption.text}\n\n` +
-            question.explanation,
-            {parse_mode: 'Markdown'}
-        );
-
-        saveUsers();
-        checkQuizCompletion(chatId, userId);
     }
+
+    const correctOption = question.options.find(opt => opt.correct);
+    bot.sendMessage(chatId,
+        `⏩ Вопрос пропущен!\n` +
+        `✅ Правильный ответ: ${correctOption.text}\n\n` +
+        question.explanation,
+        {parse_mode: 'Markdown'}
+    ).then(sendNextQuestion);
+
+    saveUsers();
 }
 
 function askQuestion(chatId, userId) {
@@ -404,17 +393,6 @@ function askQuestion(chatId, userId) {
     });
 }
 
-function checkQuizCompletion(chatId, userId) {
-    const user = users[userId];
-    const unansweredQuestions = questions.filter(q => user.answers[q.id] === undefined);
-
-    if (unansweredQuestions.length === 0) {
-        showFinalResults(chatId, userId);
-    } else {
-        bot.sendMessage(chatId, 'Выберите действие:', getQuizMenuKeyboard());
-    }
-}
-
 function handleAnswer(chatId, userId, answerLetter) {
     const user = users[userId];
     if (!user || !user.currentQuestion) {
@@ -437,13 +415,26 @@ function handleAnswer(chatId, userId, answerLetter) {
     const selectedOption = question.options[optionIndex];
     const isCorrect = selectedOption.correct;
 
+    const sendNextQuestion = () => {
+        if (user.repeatMode) {
+            askNextIncorrectQuestion(chatId, userId);
+        } else {
+            const unansweredQuestions = questions.filter(q => user.answers[q.id] === undefined);
+            if (unansweredQuestions.length === 0) {
+                showFinalResults(chatId, userId);
+            } else {
+                askQuestion(chatId, userId);
+            }
+        }
+    };
+
     if (user.repeatMode) {
         if (isCorrect) {
             user.repeatCorrect++;
             user.repeatingIncorrect = user.repeatingIncorrect.filter(id => id !== question.id);
             bot.sendMessage(chatId, `✅ *Правильно!*\n${question.explanation}`, {
                 parse_mode: 'Markdown'
-            });
+            }).then(sendNextQuestion);
         } else {
             user.repeatIncorrect++;
             user.repeatingIncorrect = user.repeatingIncorrect.filter(id => id !== question.id);
@@ -455,11 +446,8 @@ function handleAnswer(chatId, userId, answerLetter) {
                 `✅ Правильный ответ: ${correctOption.text}\n\n` +
                 question.explanation,
                 {parse_mode: 'Markdown'}
-            );
+            ).then(sendNextQuestion);
         }
-
-        saveUsers();
-        setTimeout(() => askNextIncorrectQuestion(chatId, userId), 1000);
     } else {
         user.answers[question.id] = isCorrect;
 
@@ -470,7 +458,7 @@ function handleAnswer(chatId, userId, answerLetter) {
             }
             bot.sendMessage(chatId, `✅ *Правильно!*\n${question.explanation}`, {
                 parse_mode: 'Markdown'
-            });
+            }).then(sendNextQuestion);
         } else {
             user.incorrect++;
             if (!user.incorrectQuestions) user.incorrectQuestions = [];
@@ -484,12 +472,10 @@ function handleAnswer(chatId, userId, answerLetter) {
                 `✅ Правильный ответ: ${correctOption.text}\n\n` +
                 question.explanation,
                 {parse_mode: 'Markdown'}
-            );
+            ).then(sendNextQuestion);
         }
-
-        saveUsers();
-        checkQuizCompletion(chatId, userId);
     }
+    saveUsers();
 }
 
 function showFinalResults(chatId, userId) {
@@ -586,7 +572,7 @@ function showHelp(chatId) {
         reply_markup: {
             keyboard: [
                 [{text: '🚀 Начать викторину'}],
-                [{text: '📊 Моя статистика'},{text: '🔙 Главное меню'}]
+                [{text: '📊 Моя статистика'},{text: '◀️ Главное меню'}]
             ],
             resize_keyboard: true
         }
