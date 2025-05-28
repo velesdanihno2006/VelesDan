@@ -84,8 +84,7 @@
 ---
 
 ##  Архитектура
-
-```mermaid
+```bash
 flowchart LR
   User -->|voice/mp3| Telegram
   Telegram -->|download file| Bot
