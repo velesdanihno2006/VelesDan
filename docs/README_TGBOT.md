@@ -32,7 +32,7 @@
    ```bash
    git clone https://your.repo.url/telegram-audio-summarizer.git
    cd telegram-audio-summarizer
-````
+   ````
 
 2. **Создайте Conda-окружение** (рекомендуется)
 
