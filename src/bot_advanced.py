@@ -1,188 +1,137 @@
-# bot.py
-
-import os
-import tempfile
-import subprocess
-import logging
-
+# bot_qwen_together.py  (✓ c кнопками и индикатором ожидания)
+import os, logging, tempfile, subprocess
 from dotenv import load_dotenv
-import telebot
-import whisper
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
+import telebot, whisper
+from telebot import types
+from together import Together
 
-# ─── 1. Загрузка переменных и логгирование ───────────────────────────────
+# ── 1. env ────────────────────────────────────────────────────────────
 load_dotenv()
-TG_TOKEN = os.getenv("TG_TOKEN", "").strip()
-if not TG_TOKEN:
-    raise RuntimeError("❌ В .env не найден TG_TOKEN")
+TG_TOKEN         = os.getenv("TG_TOKEN", "").strip()
+TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY", "").strip()
+if not TG_TOKEN or not TOGETHER_API_KEY:
+    raise RuntimeError(".env должен содержать TG_TOKEN и TOGETHER_API_KEY")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s | %(message)s"
-)
-logging.info("Старт бота…")
-
-# ─── 2. Инициализация Telegram-бота и Whisper ───────────────────────────
-bot = telebot.TeleBot(TG_TOKEN)
+# ── 2. init ───────────────────────────────────────────────────────────
+logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(message)s")
+bot           = telebot.TeleBot(TG_TOKEN)
 whisper_model = whisper.load_model("small")
+client        = Together(api_key=TOGETHER_API_KEY)
+MODEL_NAME    = "Qwen/Qwen2.5-72B-Instruct-Turbo"
 
-# ─── 3. Подключаем RuT5SumGazeta через safetensors ───────────────────────
-MODEL_NAME = "IlyaGusev/rut5_base_sum_gazeta"
-tokenizer = AutoTokenizer.from_pretrained(
-    MODEL_NAME,
-    use_safetensors=True
-)
-model = AutoModelForSeq2SeqLM.from_pretrained(
-    MODEL_NAME,
-    use_safetensors=True,
-    trust_remote_code=False
-)
-summarizer = pipeline(
-    "summarization",
-    model=model,
-    tokenizer=tokenizer,
-    device=-1,            # CPU; для GPU укажите device=0
-    framework="pt"
-)
-
-# ─── 4. Константы и режимы суммаризации ──────────────────────────────────
-FULL_TEXT_THRESHOLD = 5       # ≤5 с — полный транскрипт
-MAX_DURATION        = 20 * 60 # макс. длительность 20 мин
-MAX_MESSAGE_LEN     = 4000    # лимит символов в Telegram
-
-LENGTH_PARAMS = {
-    "short":  (10,  64),
-    "medium": (120, 384),
-    "long":   (240, 768),
+# ── 3. constant ───────────────────────────────────────────────────────
+FULL_TEXT_SEC = 5
+MAX_DUR_SEC   = 20*60
+MAX_CHARS     = 4000
+SETTINGS = {
+    "short":  ("Сжато изложи основные мысли в 2–3 предложениях.", 120),
+    "medium": ("Напиши развёрнутый конспект (5–7 предложений).",   300),
+    "long":   ("Составь подробный конспект (10–15 предложений).",  600),
 }
-chat_length_mode = {}
 
-# ─── 5. Утилиты ─────────────────────────────────────────────────────────
-def convert_to_wav(src: str) -> str:
-    dst = src.rsplit(".", 1)[0] + ".wav"
-    subprocess.run(
-        ["ffmpeg", "-y", "-i", src, "-ar", "16000", dst],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        check=True
-    )
+# транзитное хранилище {chat_id: текст транскрипта}
+pending_text: dict[int, str] = {}
+
+# ── 4. helpers ────────────────────────────────────────────────────────
+def to_wav(src: str) -> str:
+    dst = src.rsplit(".",1)[0] + ".wav"
+    subprocess.run(["ffmpeg","-y","-i",src,"-ar","16000",dst],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
     return dst
 
-def make_summary(text: str, mode: str) -> str:
-    clean = " ".join(text.replace("\n", " ").split())
-    min_len, max_len = LENGTH_PARAMS.get(mode, LENGTH_PARAMS["medium"])
-    try:
-        out = summarizer(
-            clean,
-            max_length=max_len,
-            min_length=min_len,
-            do_sample=False,
-            truncation=True
-        )
-        return out[0]["summary_text"].strip()
-    except Exception as e:
-        logging.error("Ошибка суммаризации (%s): %s", mode, e)
-        return clean
+def split_long(txt:str, limit=MAX_CHARS):
+    while len(txt) > limit:
+        cut = txt.rfind("\n", 0, limit) or limit
+        yield txt[:cut].strip(); txt = txt[cut:].lstrip()
+    yield txt
 
-def chunk_message(text: str, limit: int = MAX_MESSAGE_LEN) -> list[str]:
-    parts = []
-    while len(text) > limit:
-        idx = text.rfind("\n", 0, limit)
-        if idx <= 0:
-            idx = limit
-        parts.append(text[:idx].strip())
-        text = text[idx:].lstrip()
-    if text:
-        parts.append(text)
-    return parts
-
-# ─── 6. Команды выбора длины конспекта ───────────────────────────────────
-@bot.message_handler(commands=["short"])
-def cmd_short(m):
-    chat_length_mode[m.chat.id] = "short"
-    bot.reply_to(m, "Режим конспекта установлен: *короткий*.", parse_mode="Markdown")
-
-@bot.message_handler(commands=["medium"])
-def cmd_medium(m):
-    chat_length_mode[m.chat.id] = "medium"
-    bot.reply_to(m, "Режим конспекта установлен: *средний*.", parse_mode="Markdown")
-
-@bot.message_handler(commands=["long"])
-def cmd_long(m):
-    chat_length_mode[m.chat.id] = "long"
-    bot.reply_to(m, "Режим конспекта установлен: *длинный*.", parse_mode="Markdown")
-
-# ─── 7. /start и /help ───────────────────────────────────────────────────
-@bot.message_handler(commands=["start"])
-def cmd_start(m):
-    chat_length_mode[m.chat.id] = "medium"
-    bot.reply_to(
-        m,
-        "👋 Привет! Настрой длину конспекта:\n"
-        "/short  — короткий\n"
-        "/medium — средний (по умолчанию)\n"
-        "/long   — длинный\n\n"
-        "Затем отправь голосовое (OGG) или аудио (MP3) до 20 мин:\n"
-        f"• ≤{FULL_TEXT_THRESHOLD}s — полный транскрипт\n"
-        "• >5s — нейросетевой конспект"
+def qwen(text:str, mode:str) -> str:
+    prompt, max_toks = SETTINGS[mode]
+    resp = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[
+            {"role":"system","content":"Ты помогаешь студенту делать конспект."},
+            {"role":"user",  "content":f"{prompt}\n\nТекст:\n{text}"}
+        ],
+        temperature=0.0,
+        max_tokens=max_toks
     )
+    return resp.choices[0].message.content.strip()
 
-@bot.message_handler(commands=["help"])
-def cmd_help(m):
-    bot.send_message(
-        m.chat.id,
-        "Использование:\n"
-        "/short  — короткий конспект\n"
-        "/medium — средний конспект\n"
-        "/long   — длинный конспект\n\n"
-        "После выбора режима пришли голосовое/аудио до 20 мин:\n"
-        f"• ≤{FULL_TEXT_THRESHOLD}s — полный текст\n"
-        "• >5s — конспект"
+def keyboard():
+    kb = types.InlineKeyboardMarkup(row_width=3)
+    kb.add(
+        types.InlineKeyboardButton("⚡ Короткий",  callback_data="short"),
+        types.InlineKeyboardButton("📄 Средний", callback_data="medium"),
+        types.InlineKeyboardButton("📚 Длинный",   callback_data="long"),
     )
+    return kb
 
-# ─── 8. Обработчик голосовых и аудиосообщений ───────────────────────────
-@bot.message_handler(content_types=["voice", "audio"])
+# ── 5. /start /help ───────────────────────────────────────────────────
+HELP = (
+    "Пришли голосовое / MP3 до 20 мин, чтобы получить краткое содержание\n"
+)
+@bot.message_handler(commands=["start","help"])
+def cmd_help(m): bot.send_message(m.chat.id, HELP)
+
+# ── 6. voice / audio ──────────────────────────────────────────────────
+@bot.message_handler(content_types=["voice","audio"])
 def handle_audio(m):
-    if m.content_type == "voice":
-        fid, dur = m.voice.file_id, m.voice.duration
-    else:
-        fid, dur = m.audio.file_id, m.audio.duration or 0
-
-    logging.info("Получено %s длительностью %dс", m.content_type, dur)
-    if dur > MAX_DURATION:
-        return bot.send_message(m.chat.id, f"⚠️ Длина аудио ≤ {MAX_DURATION//60} мин.")
-
-    info = bot.get_file(fid)
-    raw  = bot.download_file(info.file_path)
-    ext  = os.path.splitext(info.file_path)[1] or ".ogg"
-    src  = tempfile.NamedTemporaryFile(suffix=ext, delete=False).name
-    with open(src, "wb") as f:
-        f.write(raw)
+    fid, dur = (m.voice.file_id, m.voice.duration) if m.content_type=="voice" \
+               else (m.audio.file_id, m.audio.duration or 0)
+    if dur > MAX_DUR_SEC:
+        return bot.reply_to(m, "⚠️ Аудио дольше 20 мин.")
+    # download to tmp
+    info = bot.get_file(fid); data = bot.download_file(info.file_path)
+    src = tempfile.NamedTemporaryFile(delete=False, suffix=".ogg").name
+    open(src,"wb").write(data)
 
     try:
-        wav = convert_to_wav(src)
-        txt = whisper_model.transcribe(wav)["text"].strip()
-        logging.info("Транскрипт: %.60s…", txt)
-
-        if dur <= FULL_TEXT_THRESHOLD:
-            parts = [f"*Transcript:*\n{txt}"]
+        wav = to_wav(src)
+        text = whisper_model.transcribe(wav, fp16=False)["text"].strip()
+        logging.info("Транскрипт: %.70s…", text)
+        if dur <= FULL_TEXT_SEC:
+            for chunk in split_long(text):
+                bot.send_message(m.chat.id, f"*Transcript:*\n{chunk}", parse_mode="Markdown")
         else:
-            mode = chat_length_mode.get(m.chat.id, "medium")
-            summary = make_summary(txt, mode)
-            parts = chunk_message(f"*Summary ({mode}):*\n{summary}")
-
-        for part in parts:
-            bot.send_message(m.chat.id, part, parse_mode="Markdown")
-
-    except Exception:
-        logging.exception("Ошибка при обработке аудио")
-        bot.send_message(m.chat.id, "⚠️ Ошибка при обработке аудио.")
+            pending_text[m.chat.id] = text    # запоминаем
+            bot.send_message(
+                m.chat.id,
+                "Выберите длину конспекта:",
+                reply_markup=keyboard()
+            )
+    except Exception as e:
+        logging.exception("Whisper error")
+        bot.reply_to(m, f"⚠️ Ошибка транскрипции: {e}")
     finally:
         for fn in (src, locals().get("wav")):
-            if fn and os.path.exists(fn):
-                os.remove(fn)
+            if fn and os.path.exists(fn): os.remove(fn)
 
-# ─── 9. Запуск polling ───────────────────────────────────────────────────
+# ── 7. callback: выбор длины ───────────────────────────────────────────
+@bot.callback_query_handler(func=lambda c: c.data in SETTINGS)
+def process_choice(call: types.CallbackQuery):
+    mode = call.data
+    chat_id = call.message.chat.id
+
+    text = pending_text.pop(chat_id, "")
+    if not text:
+        return bot.answer_callback_query(call.id, "Нет текста для обработки!")
+
+    # сообщение «ожидайте…»
+    wait_msg = bot.send_message(chat_id, "⏳ Обрабатываю…")
+
+    try:
+        summary = qwen(text, mode)
+        for part in split_long(summary):
+            bot.send_message(chat_id, f"*Summary ({mode}):*\n{part}", parse_mode="Markdown")
+    except Exception as e:
+        logging.exception("Qwen error")
+        bot.send_message(chat_id, f"⚠️ Ошибка Qwen: {e}")
+    finally:
+        # удалить «ожидайте…» и кнопки
+        bot.delete_message(chat_id, wait_msg.message_id)
+        bot.delete_message(chat_id, call.message.message_id)
+
 if __name__ == "__main__":
-    logging.info("Бот запущен, начинаю polling…")
-    bot.infinity_polling()
+    logging.info("Polling…")
+    bot.infinity_polling(skip_pending=True)
