@@ -1,0 +1,530 @@
+/* Основные стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Gilroy', sans-serif; /* Шрифт страницы */
+    background-color: #ead3c1; /* Цвет фона */
+    color: #574145; /* Цвет текста */
+    line-height: 1.6; /* Высота строки для удобства чтения */
+    overflow-x: hidden; /* Убираем горизонтальный скролл */
+}
+
+/* Ссылки */
+a {
+    text-decoration: none; /* Убираем подчёркивание у ссылок */
+    color: inherit; /* Цвет ссылок будет унаследован от родителя */
+}
+
+/* Шапка */
+header {
+    background-color: #574145; /* Фоновый цвет шапки */
+    padding: 15px 40px; /* Уменьшили высоту шапки */
+    display: flex; /* Используем flexbox для распределения элементов */
+    justify-content: space-between; /* Размещаем элементы шапки по краям */
+    align-items: center; /* Выравниваем элементы по вертикали */
+    position: fixed; /* Фиксируем шапку в верхней части экрана */
+    top: 0; /* Шапка будет на самом верху */
+    width: 100%; /* Ширина 100% */
+    z-index: 1000; /* Слой шапки выше остальных элементов */
+    margin: 0; /* Убираем отступы */
+    border-bottom: none; /* Убираем линию снизу */
+}
+
+/* Логотип */
+header .logo img {
+    max-height: 40px; /* Максимальная высота логотипа */
+}
+
+/* Навигация */
+nav ul {
+    display: flex; /* Используем flexbox для списка */
+    gap: 20px; /* Расстояние между элементами списка */
+}
+
+nav a {
+    color: #ffffff; /* Цвет текста ссылок */
+    font-size: 18px; /* Размер шрифта */
+    transition: color 0.3s ease; /* Плавный переход для изменения цвета */
+}
+
+nav a:hover, nav a.active {
+    color: #f87895; /* Цвет ссылок при наведении и активной ссылке */
+}
+
+/* Главная секция (Hero) */
+.hero {
+    background-color: #bea5a9; /* Фоновый цвет для главной секции */
+    color: #ffffff; /* Цвет текста */
+    padding: 120px 30px; /* Отступы внутри секции */
+    text-align: center; /* Выравнивание текста по центру */
+    border-top-left-radius: 20px; /* Скругляем верхний левый угол */
+    border-top-right-radius: 20px; /* Скругляем верхний правый угол */
+    margin-top: 0; /* Убираем отступ сверху */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); /* Тень для секции */
+    transition: transform 0.3s ease; /* Плавный эффект масштабирования при наведении */
+}
+
+.hero:hover {
+    transform: scale(1.05); /* Увеличиваем размер секции при наведении */
+}
+
+.hero h1 {
+    font-size: 3rem; /* Размер заголовка */
+    margin-bottom: 15px; /* Отступ снизу */
+}
+
+.hero p {
+    font-size: 1.2rem; /* Размер текста параграфа */
+    margin-bottom: 50px; /* Отступ снизу */
+}
+
+.hero .btn {
+    padding: 12px 25px; /* Увеличены отступы внутри кнопки */
+    background-color: #f87895; /* Цвет фона кнопки */
+    color: #ffffff; /* Цвет текста кнопки */
+    border-radius: 30px; /* Скругляем углы кнопки */
+    font-size: 1rem; /* Размер шрифта */
+    transition: background-color 0.3s ease; /* Плавный переход для фона */
+    margin-top: 20px; /* Отступ сверху */
+}
+
+.hero .btn:hover {
+    background-color: #574145; /* Изменяем цвет фона кнопки при наведении */
+}
+
+/* Секция с карточками (features) */
+.features {
+    display: flex; /* Используем flexbox для размещения карточек */
+    justify-content: space-around; /* Распределяем карточки по горизонтали */
+    margin: 50px 0; /* Отступ сверху и снизу */
+}
+
+.feature {
+    background-color: #ffffff; /* Фоновый цвет для карточки */
+    padding: 20px; /* Отступы внутри карточки */
+    border-radius: 15px; /* Скругляем углы карточки */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Тень для карточки */
+    width: 30%; /* Ширина карточки */
+    text-align: center; /* Выравнивание текста по центру */
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Плавный эффект масштабирования и тени */
+}
+
+.feature:hover {
+    transform: scale(1.05); /* Увеличиваем карточку при наведении */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2); /* Увеличиваем тень при наведении */
+}
+
+.feature h2 {
+    font-size: 1.8rem; /* Размер заголовка в карточке */
+    margin-bottom: 15px; /* Отступ снизу */
+}
+
+.feature p {
+    font-size: 1rem; /* Размер текста в карточке */
+}
+
+/* Стили для футера */
+footer {
+    text-align: center; /* Выравнивание текста по центру */
+    padding: 20px 0; /* Отступы внутри футера */
+    background-color: #574145; /* Фоновый цвет футера */
+    color: #ffffff; /* Цвет текста */
+    margin-top: 50px; /* Отступ сверху */
+    position: absolute; /* Фиксируем футер внизу страницы */
+    width: 100%; /* Ширина футера */
+    bottom: 0; /* Располагаем футер на самом низу */
+}
+/* Стили для ресурсов */
+.resources-header {
+    color: #ffffff;
+    padding: 2rem;
+    text-align: center;
+    border-radius: 8px;
+    margin-bottom: 3rem;
+}
+
+.resources-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.resource {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.resource h2 {
+    color: #2f4858;
+    margin-bottom: 15px;
+}
+
+.resource p {
+    font-size: 1rem;
+    margin-bottom: 15px;
+}
+
+.resource .btn {
+    padding: 10px 20px;
+    background-color: #f87895;
+    color: #ffffff;
+    border-radius: 30px;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.resource .btn:hover {
+    background-color: #574145;
+}
+
+/* Основные стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Gilroy', sans-serif;
+    background-color: #ead3c1; /* Цвет фона */
+    color: #574145; /* Цвет текста */
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* Шапка */
+header {
+    background-color: #574145; /* Цвет шапки */
+    padding: 15px 40px; /* Отступы */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    margin: 0;
+    border-bottom: none;
+}
+
+header .logo img {
+    max-height: 40px;
+}
+
+nav ul {
+    display: flex;
+    gap: 20px;
+}
+
+nav a {
+    color: #ffffff;
+    font-size: 18px;
+    transition: color 0.3s ease;
+}
+
+nav a:hover, nav a.active {
+    color: #f87895;
+}
+
+/* Заголовок секции */
+.section-header {
+    background-color: #bea5a9; /* Фоновый цвет для главной секции */
+    color: #ffffff; /* Цвет текста */
+    padding: 120px 30px; /* Отступы внутри секции */
+    text-align: center; /* Выравнивание текста по центру */
+    border-top-left-radius: 20px; /* Скругляем верхний левый угол */
+    border-top-right-radius: 20px; /* Скругляем верхний правый угол */
+    margin-top: 0; /* Убираем отступ сверху */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); /* Тень для секции */
+}
+
+/* Основное описание проекта */
+.project-description {
+    background-color: #ffffff;
+    color: #574145;
+    padding: 30px;
+    border-radius: 15px;
+    margin: 100px auto;
+    max-width: 900px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Заголовки в проекте */
+.project-description h2,
+.project-description h3 {
+    font-size: 2.5rem; /* Увеличиваем размер заголовка */
+    color: #574145;
+    margin-bottom: 20px;
+    font-weight: bold; /* Добавляем жирность */
+}
+
+/* Параграфы в проекте */
+.project-description p {
+    font-size: 1.2rem; /* Увеличиваем размер текста */
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+/* Список */
+.project-description ul {
+    padding-left: 20px;
+    margin-bottom: 20px;
+}
+
+.project-description li {
+    margin-bottom: 10px;
+}
+
+/* Кнопка */
+.project-description a {
+    display: inline-block;
+    background-color: #f87895;
+    color: #ffffff;
+    padding: 12px 20px;
+    text-align: center;
+    font-size: 1rem;
+    border-radius: 25px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.project-description a:hover {
+    background-color: #574145;
+}
+
+
+}
+
+/* Анимации для кнопок */
+.project-description a:hover {
+    background-color: #574145;
+}
+
+/* Основные стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Gilroy', sans-serif;
+    background-color: #ead3c1; /* Цвет фона */
+    color: #574145; /* Цвет текста */
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* Шапка */
+header {
+    background-color: #574145; /* Цвет шапки */
+    padding: 15px 40px; /* Отступы */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    margin: 0;
+    border-bottom: none;
+}
+
+header .logo img {
+    max-height: 40px;
+}
+
+nav ul {
+    display: flex;
+    gap: 20px;
+}
+
+nav a {
+    color: #ffffff;
+    font-size: 18px;
+    transition: color 0.3s ease;
+}
+
+nav a:hover, nav a.active {
+    color: #f87895;
+}
+
+/* Заголовок секции */
+.section-header {
+    background-color: #bea5a9; /* Фоновый цвет для главной секции */
+    color: #ffffff; /* Цвет текста */
+    padding: 120px 30px; /* Отступы внутри секции */
+    text-align: center; /* Выравнивание текста по центру */
+    border-top-left-radius: 20px; /* Скругляем верхний левый угол */
+    border-top-right-radius: 20px; /* Скругляем верхний правый угол */
+    margin-top: 0; /* Убираем отступ сверху */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); /* Тень для секции */
+}
+
+/* Окно для участников */
+.info-box {
+    background-color: #ffffff;
+    color: #574145;
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    max-width: 600px; /* Ограничиваем ширину */
+    margin-top: 15px; /* Чтобы избежать слишком большого отступа */
+    margin-left: auto; /* Центрируем по горизонтали */
+    margin-right: auto; /* Центрируем по горизонтали */
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Плавное изменение */
+}
+
+/* Эффект при наведении */
+.info-box:hover {
+    transform: scale(1.05); /* Увеличиваем размер при наведении */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Увеличиваем тень */
+}
+
+/* Заголовки в окне */
+.info-box h3 {
+    font-size: 1.8rem;
+    color: #574145;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+/* Текст в окне */
+.info-box p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+}
+/* Футер */
+footer {
+    text-align: center; /* Выравнивание текста по центру */
+    padding: 20px;
+    background-color: #574145;
+    color: #ffffff;
+    position: relative; /* Относительное позиционирование футера */
+    width: 100%;
+    bottom: 0;
+}
+
+/* Анимации для кнопок */
+.project-description a:hover {
+    background-color: #574145;
+}
+/* Общие стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Gilroy', sans-serif; /* Шрифт */
+    background-color: #ead3c1; /* Цвет фона */
+    color: #574145; /* Цвет текста */
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* Шапка */
+header {
+    background-color: #574145; /* Цвет шапки */
+    padding: 15px 40px; /* Отступы */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    margin: 0;
+    border-bottom: none;
+}
+
+header .logo img {
+    max-height: 40px;
+}
+
+nav ul {
+    display: flex;
+    gap: 20px;
+}
+
+nav a {
+    color: #ffffff;
+    font-size: 18px;
+    transition: color 0.3s ease;
+}
+
+nav a:hover, nav a.active {
+    color: #f87895;
+}
+
+/* Заголовок секции */
+.resources-header {
+    background-color: #bea5a9; /* Фоновый цвет для главной секции */
+    color: #ffffff; /* Цвет текста */
+    padding: 100px 30px; /* Отступы внутри секции */
+    text-align: center; /* Выравнивание текста по центру */
+    margin-top: 0; /* Убираем отступ сверху */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); /* Тень для секции */
+    transition: transform 0.3s ease; /* Плавный эффект масштабирования при наведении */
+}
+
+/* Секция с ресурсами */
+.resources-list {
+    margin: 40px auto;
+    max-width: 900px;
+    display: grid;
+    gap: 20px;
+}
+
+/* Карточка ресурса */
+.resource {
+    background-color: #ffffff;
+    color: #574145;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.resource h2 {
+    font-size: 1.8rem;
+    color: #574145;
+    margin-bottom: 15px;
+}
+
+.resource p {
+    font-size: 1rem;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.resource .btn {
+    display: inline-block;
+    background-color: #f87895;
+    color: #ffffff;
+    padding: 12px 20px;
+    text-align: center;
+    font-size: 1rem;
+    border-radius: 25px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.resource .btn:hover {
+    background-color: #574145;
+}
+
+/* Анимации для кнопок */
+.resource .btn:hover {
+    background-color: #574145;
+}
