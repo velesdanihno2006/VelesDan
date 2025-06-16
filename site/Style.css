@@ -96,8 +96,8 @@ main {
 
 /* --- Стили для главной страницы (Hero) --- */
 .hero {
-    background: url('images/hero-bg.jpg') no-repeat center center/cover;
-    height: 60vh;
+    background: url('images/logo.jpg') no-repeat center center/cover;
+    height: 40vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
